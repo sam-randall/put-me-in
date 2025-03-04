@@ -1,0 +1,155 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Lineup</title>
+</head>
+<body>
+    <h2>Enter Players & Skill Levels</h2>
+    <table id="playerTable">
+        <thead>
+            <tr>
+                <th>Player Name</th>
+                <th>Skill Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+            <tr>
+                <td><input type="text" name="playerName"></td>
+                <td><input type="text" name="skillLevel"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="item">
+        <input type="checkbox" id="init-lineup" onclick="checkInitLineup()">
+        <label for="init-lineup">Provide Initial Lineup</label>
+    </div>
+    <div id="initial-lineup-div">
+        
+    </div>
+
+
+    <button onclick="submitLineup()">Create Lineup</button>
+    <pre id="output"></pre>
+
+    <script>
+
+        function checkInitLineup() {
+            const isChecked = document.getElementById('init-lineup').checked;
+
+            if (isChecked) {
+                document.getElementById("initial-lineup-div").innerHTML = `<table id="lineup-Table">
+            <tbody>
+                <tr>
+                    <td><input type="text" name="playerName"></td>
+                </tr>
+                <tr>
+                    <td><input type="text" name="playerName"></td>
+                </tr>
+                <tr>
+                    <td><input type="text" name="playerName"></td>
+                </tr>
+                <tr>
+                    <td><input type="text" name="playerName"></td>
+                </tr>
+                <tr>
+                    <td><input type="text" name="playerName"></td>
+                </tr>
+            </tbody>
+        </table>`
+            } else {
+                document.getElementById("initial-lineup-div").innerHTML = "";
+            }
+        }
+
+
+        async function submitLineup() {
+            const table = document.getElementById("playerTable").getElementsByTagName("tbody")[0];
+            const rows = table.getElementsByTagName("tr");
+            const lineup = [];
+
+            for (let row of rows) {
+                const name = row.cells[0].getElementsByTagName("input")[0].value;
+                const skillLevel = row.cells[1].getElementsByTagName("input")[0].value;
+                if (name.trim() !== "") {
+                    lineup.push({ name, skill_level: parseFloat(skillLevel)});
+                }
+            }
+
+            const isChecked = document.getElementById('init-lineup').checked;
+
+            let initialLineup = 'auto';
+
+            if (isChecked) {
+                initialLineup = [];
+                const table = document.getElementById("lineup-Table").getElementsByTagName("tbody")[0];
+                const rows = table.getElementsByTagName("tr");
+                for (let row of rows) {
+                    const name = row.cells[0].getElementsByTagName("input")[0].value;
+                    if (name.trim() !== "") {
+                        initialLineup.push(name);
+                    }
+                }
+            }
+
+            const d = {"players": lineup, 'initial_lineup': initialLineup};
+
+            try {
+
+                const response = await fetch("http://127.0.0.1:8000/submit_lineup/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", 'accept': 'application/json' },
+                    body: JSON.stringify(d)
+                });
+
+                const data = await response.json();
+
+                console.log(data);
+                document.getElementById("output").innerHTML = data['vis'];
+            } catch (error) {
+                document.getElementById("output").textContent = "Error: " + error;
+            }
+        }
+    </script>
+</body>
+</html>
