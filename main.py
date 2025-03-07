@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Optional, Union
+from typing import List, Union
 
 from fastapi.middleware.cors import CORSMiddleware
 from run_optimization import generate_assignment, Game
