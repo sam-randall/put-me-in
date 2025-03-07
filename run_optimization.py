@@ -126,23 +126,15 @@ def generate_assignment(names, skills, game_config: Game, initial_line_up: Optio
     if problem.status == 'infeasible':
         return pd.DataFrame(), problem.status
 
-    print(problem.status)
-
-    print(out)
-    
-
     # Post Processing.
     df = pd.DataFrame(variables.value, columns = names)
 
-    print(df)
     cleaned_up = []
     for _, row in df.iterrows():
         playing = [name for item, name in zip(row, names) if item > 0.99]
         cleaned_up.append(playing)
 
     df = pd.DataFrame(cleaned_up)
-
-    print(df)
     df.index = [f"Period {p}" for p in range(1, NUMBER_OF_PERIODS + 1)]
     df.columns = [f"Player {i}" for i in range(1, SPOTS + 1)]
     # END Post Processing.
@@ -156,7 +148,8 @@ def main():
     names = ["Jack", "Jameson", "Caleb", "Beckham", "Dillon", "Brady", "Dominic", "Leo"]
     skills = np.array([3, 3, 3, 2, 1, 1, 1, 1])
     start = time.time()
-    df, _ = generate_assignment(names, skills, game, first_period_lineup).T
+    df, _ = generate_assignment(names, skills, game, first_period_lineup)
+    df = df.T
     end = time.time()
     print(end - start)
     df.to_csv('assignments.csv')
