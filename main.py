@@ -26,7 +26,8 @@ class Player(BaseModel):
 
 @app.post("/submit_lineup/")
 async def submit_lineup(players: List[Player], initial_lineup: Union[List[str], str] = 'auto'):
-
+    print("Players", players)
+    print("Lineup", initial_lineup)
     game = Game(6, 5)
 
     names = [player.name for player in players]
@@ -36,7 +37,6 @@ async def submit_lineup(players: List[Player], initial_lineup: Union[List[str], 
 
     out = out.T.to_html()
 
-    print(status)
 
     return {"vis": out, "optimization_status": status}
 
