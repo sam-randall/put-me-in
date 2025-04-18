@@ -31,17 +31,9 @@ async def submit_lineup(players: List[Player], initial_lineup: Union[List[str], 
     game = Game(num_periods, 5)
     names = [player.name for player in players]
     skill_level = [player.skill_level for player in players]
-
-
-
     out, status = generate_assignment(names, skill_level, game, initial_lineup)
-
     out = out.T.to_html()
-
-    
-
-
-    return {"vis": out, "optimization_status": status}
+    return {"vis": out, "optimization_status": status, 'num_periods': num_periods}
 
 # Run the server 
 # Run this in the terminal: uvicorn main:app --reload
