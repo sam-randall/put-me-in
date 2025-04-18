@@ -25,20 +25,23 @@ class Player(BaseModel):
 
 
 @app.post("/submit_lineup/")
-async def submit_lineup(players: List[Player], initial_lineup: Union[List[str], str] = 'auto'):
+async def submit_lineup(players: List[Player], initial_lineup: Union[List[str], str] = 'auto', num_periods: int = 6):
     print("Players", players)
     print("Lineup", initial_lineup)
-    game = Game(6, 5)
-
+    game = Game(num_periods, 5)
     names = [player.name for player in players]
     skill_level = [player.skill_level for player in players]
+
+
 
     out, status = generate_assignment(names, skill_level, game, initial_lineup)
 
     out = out.T.to_html()
 
+    
+
 
     return {"vis": out, "optimization_status": status}
 
-# Run the server
+# Run the server 
 # Run this in the terminal: uvicorn main:app --reload
