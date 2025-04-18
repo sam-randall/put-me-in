@@ -140,8 +140,9 @@ def generate_assignment(names, skills, game_config: Game, initial_line_up: Optio
     problem = cp.Problem(objective, constraints)
     out = problem.solve(solver = cp.SCIP)
 
+    active_constraints = [c.value for c, isActive in enabled_constraints.items() if isActive]
     if problem.status == 'infeasible':
-        return pd.DataFrame(), problem.status
+        return pd.DataFrame(), problem.status, active_constraints
 
     # Post Processing.
     df = pd.DataFrame(variables.value, columns = names)
@@ -155,7 +156,7 @@ def generate_assignment(names, skills, game_config: Game, initial_line_up: Optio
     df.index = [f"Period {p}" for p in range(1, NUMBER_OF_PERIODS + 1)]
     df.columns = [f"Player {i}" for i in range(1, SPOTS + 1)]
     # END Post Processing.
-    return df, problem.status, [c.value for c, isActive in enabled_constraints.items() if isActive]
+    return df, problem.status, active_constraints
 
 def main():
 
