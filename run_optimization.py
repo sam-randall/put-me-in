@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Literal, Optional, Union
 import time
+from enum import Enum
 
 class Game:
     def __init__(self, number_of_periods: int, players_per_period: int):
@@ -18,7 +19,15 @@ def mean(x):
 def variance(X: cp.Variable):
     return cp.sum_squares(X - mean(X)) # / scale
 
-def define_constraints(variables: cp.Variable, parameters: Dict[str, int]) -> List[cp.Expression]:
+class Constraint(Enum):
+    MAX_CONSECUTIVE_BENCH_TIME = 'max_consecutive_bench_time'
+    MAX_CONSECUTIVE_PLAY_TIME = 'max_consecutive_play_time'
+    MIN_PLAY_TIME = 'min_play_time'
+    MAX_PLAY_TIME = 'max_play_time'
+
+
+
+def define_constraints(variables: cp.Variable, parameters: Dict[str, int], enabled_constraints: Dict[str, bool]) -> List[cp.Expression]:
     '''Given parameters, for basketball line-up problem, return list of relevant constraints.'''
 
     NUMBER_OF_PERIODS = parameters['number_of_periods']
@@ -37,31 +46,39 @@ def define_constraints(variables: cp.Variable, parameters: Dict[str, int]) -> Li
     for p in range(NUMBER_OF_PERIODS):
         constraints += [variables[p].sum() == SPOTS]
 
-    # For each child, make sure it never has more than 
-    # MAX_CONSECUTIVE_BENCH_PERIODS in a row.
-    for c in range(NUMBER_OF_CHILDREN):
-        for i in range(NUMBER_OF_PERIODS - MAX_CONSECUTIVE_BENCH_PERIODS):
-            # Make sure for every start 
-            # every sequence of length 
-            # MAX_CONSECUTIVE_BENCH_PERIOD + 1
-            # has more than 1 in it.
-            total = 0
-            for j in range(i, i + MAX_CONSECUTIVE_BENCH_PERIODS + 1):
-                total += variables[j][c]
-            constraints += [total >= 1]
+
+    if enabled_constraints.get(Constraint.MAX_CONSECUTIVE_BENCH_TIME, False):
+
+        # For each child, make sure it never has more than 
+        # MAX_CONSECUTIVE_BENCH_PERIODS in a row.
+        for c in range(NUMBER_OF_CHILDREN):
+            for i in range(NUMBER_OF_PERIODS - MAX_CONSECUTIVE_BENCH_PERIODS):
+                # Make sure for every start 
+                # every sequence of length 
+                # MAX_CONSECUTIVE_BENCH_PERIOD + 1
+                # has more than 1 in it.
+                total = 0
+                for j in range(i, i + MAX_CONSECUTIVE_BENCH_PERIODS + 1):
+                    total += variables[j][c]
+                constraints += [total >= 1]
 
     # Make sure each child plays a minimum number of periods.
     # Make sure each child does not play more than a maximum number of periods.
     for c in range(NUMBER_OF_CHILDREN):
-        constraints += [variables[:, c].sum() >= MIN_PERIODS_A_CHILD_MUST_PLAY]
-        constraints += [variables[:, c].sum() <= MAX_PERIODS_A_CHILD_MUST_PLAY]
+
+        if enabled_constraints.get(Constraint.MIN_PLAY_TIME, False):
+            constraints += [variables[:, c].sum() >= MIN_PERIODS_A_CHILD_MUST_PLAY]
+
+        if enabled_constraints.get(Constraint.MAX_PLAY_TIME, False):
+            constraints += [variables[:, c].sum() <= MAX_PERIODS_A_CHILD_MUST_PLAY]
 
     # Make sure no kids plays for more than MAX_CONSECUTIVE_PLAYING_PERIODS
     # otherwise they get tired :(
-    for c in range(NUMBER_OF_CHILDREN):
-        for i in range(0, NUMBER_OF_PERIODS - (MAX_CONSECUTIVE_PLAYING_PERIODS + 1)):
-            constraints += [variables[i:i + MAX_CONSECUTIVE_PLAYING_PERIODS + 1, c].sum() \
-                             <= MAX_CONSECUTIVE_PLAYING_PERIODS]
+    if enabled_constraints.get(Constraint.MAX_CONSECUTIVE_PLAY_TIME, False):
+        for c in range(NUMBER_OF_CHILDREN):
+            for i in range(0, NUMBER_OF_PERIODS - (MAX_CONSECUTIVE_PLAYING_PERIODS + 1)):
+                constraints += [variables[i:i + MAX_CONSECUTIVE_PLAYING_PERIODS + 1, c].sum() \
+                                <= MAX_CONSECUTIVE_PLAYING_PERIODS]
     
     return constraints
 
@@ -73,7 +90,7 @@ def frame_problem(number_of_periods: int, skill_levels: np.ndarray):
     return independent_variables, objective
 
 
-def generate_assignment(names, skills, game_config: Game, initial_line_up: Optional[Union[List[str], Literal['auto']]] = None, ):
+def generate_assignment(names, skills, game_config: Game, initial_line_up: Optional[Union[List[str], Literal['auto']]] = None, enabled_constraints = None):
     NUMBER_OF_PERIODS = game_config.number_of_periods
     
     MAX_CONSECUTIVE_BENCH_PERIODS = 1
@@ -101,9 +118,9 @@ def generate_assignment(names, skills, game_config: Game, initial_line_up: Optio
         'max_periods_a_child_must_play': MAX_PERIODS_A_CHILD_MUST_PLAY
     }
 
-    constraints = define_constraints(variables, parameters)
+    constraints = define_constraints(variables, parameters, enabled_constraints)
 
-
+    print(enabled_constraints)
 
     if initial_line_up is not None:
 
@@ -138,7 +155,7 @@ def generate_assignment(names, skills, game_config: Game, initial_line_up: Optio
     df.index = [f"Period {p}" for p in range(1, NUMBER_OF_PERIODS + 1)]
     df.columns = [f"Player {i}" for i in range(1, SPOTS + 1)]
     # END Post Processing.
-    return df, problem.status
+    return df, problem.status, [c.value for c, isActive in enabled_constraints.items() if isActive]
 
 def main():
 
