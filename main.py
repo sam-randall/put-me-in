@@ -38,17 +38,22 @@ class LineupRequest(BaseModel):
 async def submit_lineup(request: LineupRequest):
     logging.info("Request", request)
 
+    print(request)
+
     game = Game(request.num_periods, 5)
     names = [player.name for player in request.players]
     skill_level = [player.skill_level for player in request.players]
 
-    # TODO: Pass this in from outside.
-    enabled_constraints = {
-        Constraint.MAX_CONSECUTIVE_BENCH_TIME: True,
-        Constraint.MAX_CONSECUTIVE_PLAY_TIME: True, 
-        Constraint.MIN_PLAY_TIME: True,
-        Constraint.MAX_PLAY_TIME: True
-    }
+    # Check if enabled_constraints is None for backward compatibility.
+    if request.enabled_constraints is None:
+        enabled_constraints = {
+            Constraint.MAX_CONSECUTIVE_BENCH_TIME: True,
+            Constraint.MAX_CONSECUTIVE_PLAY_TIME: True, 
+            Constraint.MIN_PLAY_TIME: True,
+            Constraint.MAX_PLAY_TIME: True
+        }
+    else:
+        enabled_constraints = {Constraint(key): items for key, items in request.enabled_constraints.items()} 
 
     out, status, constraints = generate_assignment(names, skill_level, game, request.initial_lineup, enabled_constraints)
     out = out.T.to_html()
